@@ -18,16 +18,23 @@ api = Api(app)
 
 LOCK_STATUS = {}
 
-def lock(tid):
+def lock(tid, thread):
     print("lock " + str(tid))
-    LOCK_STATUS[tid] = True
+    LOCK_STATUS[tid] = thread
 
 def unlock(tid):
-    print("unlock " + str(tid))
-    LOCK_STATUS[tid] = False
+    if tid in LOCK_STATUS:
+        thread = LOCK_STATUS[tid]
+        print("unlock " + str(tid), " thread ", str(thread))
+        if thread:
+            thread.cancel()
+        LOCK_STATUS[tid] = None
 
 def is_locked(tid):
-    return tid in LOCK_STATUS and LOCK_STATUS[tid]
+    if tid in LOCK_STATUS and LOCK_STATUS[tid]:
+        return True
+    else:
+        return False
 
 class Text(Resource):
     def get(self, tid):
@@ -46,9 +53,9 @@ class Text(Resource):
             if isLock:
                 return jsonify({"isLock": True})
             else:
-                lock(tid)
-                t = Timer(60.0, unlock, [tid])
-                t.start()
+                thread = Timer(60.0, unlock, [tid])
+                lock(tid, thread)
+                thread.start()
                 return jsonify(res)
 
     def put(self, tid):
@@ -119,6 +126,11 @@ def download_file(tid):
     response.headers['Content-Disposition'] = 'attachment; filename={}'.format(res["title"] + ".txt")
     return response
 
+@app.route('/unlock/<string:tid>')
+def unlock_tid(tid):
+    unlock(int(tid))
+    response = make_response("success")
+    return response
 
 api.add_resource(TextList, '/texts')
 api.add_resource(Text, '/text/<tid>')
