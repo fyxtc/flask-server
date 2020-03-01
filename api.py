@@ -20,8 +20,8 @@ LOCK_STATUS = {}
 LOCK_TIME = 60
 
 def lock(tid):
-    print("lock " + str(tid))
     thread = Timer(LOCK_TIME, unlock, [tid])
+    print("lock " + str(tid) + ", " + str(thread))
     LOCK_STATUS[tid] = thread
     thread.start()
 
@@ -34,6 +34,8 @@ def unlock(tid):
         LOCK_STATUS[tid] = None
 
 def is_locked(tid):
+    print("LOCK_STATUS:")
+    print(LOCK_STATUS)
     if tid in LOCK_STATUS and LOCK_STATUS[tid]:
         return True
     else:
