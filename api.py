@@ -17,10 +17,13 @@ api = Api(app)
 
 
 LOCK_STATUS = {}
+LOCK_TIME = 60
 
-def lock(tid, thread):
+def lock(tid):
     print("lock " + str(tid))
+    thread = Timer(LOCK_TIME, unlock, [tid])
     LOCK_STATUS[tid] = thread
+    thread.start()
 
 def unlock(tid):
     if tid in LOCK_STATUS:
@@ -53,9 +56,7 @@ class Text(Resource):
             if isLock:
                 return jsonify({"isLock": True})
             else:
-                thread = Timer(60.0, unlock, [tid])
-                lock(tid, thread)
-                thread.start()
+                lock(tid)
                 return jsonify(res)
 
     def put(self, tid):
@@ -129,6 +130,13 @@ def download_file(tid):
 @app.route('/unlock/<string:tid>')
 def unlock_tid(tid):
     unlock(int(tid))
+    response = make_response("success")
+    return response
+
+@app.route('/lock/<string:tid>')
+def lock_tid(tid):
+    unlock(int(tid))
+    lock(int(tid))
     response = make_response("success")
     return response
 
